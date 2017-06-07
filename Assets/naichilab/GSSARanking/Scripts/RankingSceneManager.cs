@@ -130,7 +130,12 @@ namespace naichilab
 			var msg = Instantiate (readingNodePrefab, scrollViewContent);
 
 			var so = new SpreadSheetQuery ();
-			yield return so.OrderByDescending ("hiscore").Limit (30).FindAsync ();
+
+			if (RankingLoader.Instance.setting.Order == ScoreOrder.OrderByAscending) {
+				yield return so.OrderByAscending ("hiscore").Limit (30).FindAsync ();
+			} else {
+				yield return so.OrderByDescending ("hiscore").Limit (30).FindAsync ();
+			}
 
 			Debug.Log ("count : " + so.Count.ToString ());
 			Destroy (msg);
