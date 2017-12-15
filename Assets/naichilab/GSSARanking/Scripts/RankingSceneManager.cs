@@ -1,9 +1,9 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using GSSA;
 using System.Linq;
+using NCMB;
+using NCMB.Extensions;
 
 namespace naichilab
 {
@@ -19,8 +19,23 @@ namespace naichilab
 		[SerializeField] GameObject readingNodePrefab;
 		[SerializeField] GameObject notFoundNodePrefab;
 
-
-		private SpreadSheetObject highScoreSpreadSheetObject;
+		private const string OBJECT_ID = "objectId";
+		private string _objectid = null;
+        private string ObjectID
+        {
+            get
+            {
+	            return _objectid ?? (_objectid = PlayerPrefs.GetString(OBJECT_ID, null));
+            }
+	        set
+	        {
+		        if (_objectid == value) return;
+		        PlayerPrefs.SetString(OBJECT_ID,_objectid = value);
+	        }
+        }
+			
+		private const string RankingDataClassName = "RankingData";
+		private NCMBObject highScoreSpreadSheetObject;
 
 		/// <summary>
 		/// 入力した名前
@@ -50,8 +65,9 @@ namespace naichilab
 			{
 				this.highScoreLabel.text = "取得中...";
 
-				var hiScoreCheck = new SpreadSheetQuery ();
-				yield return hiScoreCheck.Where ("id", "=", SpreadSheetSetting.Instance.UniqueID).FindAsync ();
+				var hiScoreCheck = new YieldableNcmbQuery<NCMBObject>(RankingDataClassName);
+				hiScoreCheck.WhereEqualTo(OBJECT_ID, ObjectID);
+				yield return hiScoreCheck.FindAsync();
 
 				if (hiScoreCheck.Count > 0) {
 					//既にハイスコアは登録されている
@@ -69,7 +85,6 @@ namespace naichilab
 
 			//ランキング取得
 			yield return StartCoroutine (LoadRankingBoard ());
-
 
 			//スコア更新している場合、ボタン有効化
 			if (this.highScoreSpreadSheetObject == null) {
@@ -101,14 +116,25 @@ namespace naichilab
 
 			//ハイスコア送信
 			if (this.highScoreSpreadSheetObject == null) {
-				this.highScoreSpreadSheetObject = new SpreadSheetObject ();
-				this.highScoreSpreadSheetObject ["id"] = SpreadSheetSetting.Instance.UniqueID;
+				this.highScoreSpreadSheetObject = new NCMBObject(RankingDataClassName);
+				this.highScoreSpreadSheetObject.ObjectId = ObjectID;
 			}
 
 			this.highScoreSpreadSheetObject ["name"] = this.InputtedNameForSave;
-			this.highScoreSpreadSheetObject ["hiscore"] = RankingLoader.Instance.Score.TextForSave;
-			yield return this.highScoreSpreadSheetObject.SaveAsync ();
+			this.highScoreSpreadSheetObject ["hiscore"] = RankingLoader.Instance.Score.Value;
+			NCMBException errorResult = null;
+			
+			yield return this.highScoreSpreadSheetObject.YieldableSaveAsync(error => errorResult = error);
 
+			if (errorResult != null)  //NCMBのコンソールから直接削除した場合に、該当のobjectIdが無いので発生する（らしい）
+			{
+				highScoreSpreadSheetObject.ObjectId = null;
+				yield return this.highScoreSpreadSheetObject.YieldableSaveAsync(error => errorResult = error);	//新規として送信
+			}
+
+			//ObjectIDを保存して次に備える
+			ObjectID = this.highScoreSpreadSheetObject.ObjectId;
+			
 			this.highScoreLabel.text = RankingLoader.Instance.Score.TextForDisplay;
 
 			yield return StartCoroutine (LoadRankingBoard ());
@@ -129,13 +155,14 @@ namespace naichilab
 
 			var msg = Instantiate (readingNodePrefab, scrollViewContent);
 
-			var so = new SpreadSheetQuery ();
-
-			if (RankingLoader.Instance.setting.Order == ScoreOrder.OrderByAscending) {
-				yield return so.OrderByAscending ("hiscore").Limit (30).FindAsync ();
+			var so = new YieldableNcmbQuery<NCMBObject>(RankingDataClassName);
+			so.Limit = 30;
+			if (RankingLoader.Instance.setting.Order == ScoreOrder.OrderByAscending){
+				so.OrderByAscending("hiscore");
 			} else {
-				yield return so.OrderByDescending ("hiscore").Limit (30).FindAsync ();
+				so.OrderByDescending("hiscore");
 			}
+		    yield return so.FindAsync();
 
 			Debug.Log ("count : " + so.Count.ToString ());
 			Destroy (msg);
