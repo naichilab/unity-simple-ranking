@@ -21,19 +21,18 @@ namespace naichilab
 
 		private const string OBJECT_ID = "objectId";
 		private string _objectid = null;
-        private string ObjectID
-        {
-            get
-            {
-	            return _objectid ?? (_objectid = PlayerPrefs.GetString(OBJECT_ID, null));
-            }
-	        set
-	        {
-		        if (_objectid == value) return;
-		        PlayerPrefs.SetString(OBJECT_ID,_objectid = value);
-	        }
-        }
-			
+
+		private string ObjectID {
+			get {
+				return _objectid ?? (_objectid = PlayerPrefs.GetString (OBJECT_ID, null));
+			}
+			set {
+				if (_objectid == value)
+					return;
+				PlayerPrefs.SetString (OBJECT_ID, _objectid = value);
+			}
+		}
+
 		private const string RankingDataClassName = "RankingData";
 		private NCMBObject highScoreSpreadSheetObject;
 
@@ -65,9 +64,9 @@ namespace naichilab
 			{
 				this.highScoreLabel.text = "取得中...";
 
-				var hiScoreCheck = new YieldableNcmbQuery<NCMBObject>(RankingDataClassName);
-				hiScoreCheck.WhereEqualTo(OBJECT_ID, ObjectID);
-				yield return hiScoreCheck.FindAsync();
+				var hiScoreCheck = new YieldableNcmbQuery<NCMBObject> (RankingDataClassName);
+				hiScoreCheck.WhereEqualTo (OBJECT_ID, ObjectID);
+				yield return hiScoreCheck.FindAsync ();
 
 				if (hiScoreCheck.Count > 0) {
 					//既にハイスコアは登録されている
@@ -116,7 +115,7 @@ namespace naichilab
 
 			//ハイスコア送信
 			if (this.highScoreSpreadSheetObject == null) {
-				this.highScoreSpreadSheetObject = new NCMBObject(RankingDataClassName);
+				this.highScoreSpreadSheetObject = new NCMBObject (RankingDataClassName);
 				this.highScoreSpreadSheetObject.ObjectId = ObjectID;
 			}
 
@@ -124,12 +123,11 @@ namespace naichilab
 			this.highScoreSpreadSheetObject ["hiscore"] = RankingLoader.Instance.Score.Value;
 			NCMBException errorResult = null;
 			
-			yield return this.highScoreSpreadSheetObject.YieldableSaveAsync(error => errorResult = error);
+			yield return this.highScoreSpreadSheetObject.YieldableSaveAsync (error => errorResult = error);
 
-			if (errorResult != null)  //NCMBのコンソールから直接削除した場合に、該当のobjectIdが無いので発生する（らしい）
-			{
+			if (errorResult != null) {  //NCMBのコンソールから直接削除した場合に、該当のobjectIdが無いので発生する（らしい）
 				highScoreSpreadSheetObject.ObjectId = null;
-				yield return this.highScoreSpreadSheetObject.YieldableSaveAsync(error => errorResult = error);	//新規として送信
+				yield return this.highScoreSpreadSheetObject.YieldableSaveAsync (error => errorResult = error);	//新規として送信
 			}
 
 			//ObjectIDを保存して次に備える
@@ -155,14 +153,17 @@ namespace naichilab
 
 			var msg = Instantiate (readingNodePrefab, scrollViewContent);
 
-			var so = new YieldableNcmbQuery<NCMBObject>(RankingDataClassName);
+			//2017.2.0b3の描画されないバグ暫定対応
+			MaskOffOn ();
+
+			var so = new YieldableNcmbQuery<NCMBObject> (RankingDataClassName);
 			so.Limit = 30;
-			if (RankingLoader.Instance.setting.Order == ScoreOrder.OrderByAscending){
-				so.OrderByAscending("hiscore");
+			if (RankingLoader.Instance.setting.Order == ScoreOrder.OrderByAscending) {
+				so.OrderByAscending ("hiscore");
 			} else {
-				so.OrderByDescending("hiscore");
+				so.OrderByDescending ("hiscore");
 			}
-		    yield return so.FindAsync();
+			yield return so.FindAsync ();
 
 			Debug.Log ("count : " + so.Count.ToString ());
 			Destroy (msg);
@@ -193,5 +194,15 @@ namespace naichilab
 			this.closeButton.interactable = false;
 			UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync ("Ranking");
 		}
+
+		private void MaskOffOn ()
+		{
+			//2017.2.0b3でなぜかScrollViewContentを追加しても描画されない場合がある。
+			//親maskをOFF/ONすると直るので無理やり・・・
+			var m = this.scrollViewContent.parent.GetComponent<Mask> ();
+			m.enabled = false;
+			m.enabled = true;
+		}
+
 	}
 }
