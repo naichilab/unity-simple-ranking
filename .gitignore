@@ -36,3 +36,8 @@ sysinfo.txt
 WebGLRelease/
 
 Assets/GSSA*
+
+# Ignore NCMB package files
+Assets/Editor*
+Assets/NCMB*
+Assets/Plugins*
