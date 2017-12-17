@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -37,7 +38,12 @@ public class SampleSceneManager : MonoBehaviour
 
 	public void OnResultButtonPresset ()
 	{
-		naichilab.RankingLoader.Instance.SendScoreAndShowRanking (this.score);
+	    naichilab.RankingLoader.Instance.SendScoreAndShowRanking(this.score);
 	}
+
+    public void LocalSaveReset()
+    {
+        PlayerPrefs.DeleteAll();
+    }
 
 }
