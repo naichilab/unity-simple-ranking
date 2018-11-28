@@ -4,13 +4,13 @@ using UnityEngine;
 
 namespace naichilab
 {
-	public interface IScore
-	{
+    public interface IScore
+    {
 
-		string TextForDisplay{ get; }
+        string TextForDisplay { get; }
 
-		string TextForSave{ get; }
+        string TextForSave { get; }
 
-		double Value{ get; }
-	}
+        double Value { get; }
+    }
 }
