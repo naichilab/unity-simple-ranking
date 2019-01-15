@@ -64,7 +64,7 @@ namespace naichilab
 
 		IEnumerator GetHighScoreAndRankingBoard ()
 		{
-			this.scoreLabel.text = RankingLoader.Instance.Score.TextForDisplay;
+			this.scoreLabel.text = RankingLoader.Instance.LastScore.TextForDisplay;
 			this.UseRankingName = RankingLoader.Instance.CurrentBoard.ClassName;
 			this.captionLabel.text = string.Format("{0}ランキング", RankingLoader.Instance.CurrentBoard.BoardName);
 
@@ -98,7 +98,7 @@ namespace naichilab
 				this.sendScoreButton.interactable = true;
 			} else {
 				var highScore = RankingLoader.Instance.BuildScore (this.highScoreSpreadSheetObject ["hiscore"].ToString ());
-				var score = RankingLoader.Instance.Score;
+				var score = RankingLoader.Instance.LastScore;
 
 				if (RankingLoader.Instance.CurrentBoard.Order == ScoreOrder.OrderByAscending) {
 					//数値が低い方が高スコア
@@ -128,7 +128,7 @@ namespace naichilab
 			}
 
 			this.highScoreSpreadSheetObject ["name"] = this.InputtedNameForSave;
-			this.highScoreSpreadSheetObject ["hiscore"] = RankingLoader.Instance.Score.Value;
+			this.highScoreSpreadSheetObject ["hiscore"] = RankingLoader.Instance.LastScore.Value;
 			NCMBException errorResult = null;
 
 			yield return this.highScoreSpreadSheetObject.YieldableSaveAsync(error => errorResult = error);
@@ -141,7 +141,7 @@ namespace naichilab
 			//ObjectIDを保存して次に備える
 			ObjectID = this.highScoreSpreadSheetObject.ObjectId;
 
-			this.highScoreLabel.text = RankingLoader.Instance.Score.TextForDisplay;
+			this.highScoreLabel.text = RankingLoader.Instance.LastScore.TextForDisplay;
 
 			yield return StartCoroutine (LoadRankingBoard ());
 		}

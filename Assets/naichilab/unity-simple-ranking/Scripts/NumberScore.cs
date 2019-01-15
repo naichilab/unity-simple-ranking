@@ -4,38 +4,49 @@ using UnityEngine;
 
 namespace naichilab
 {
-	public class NumberScore : IScore
-	{
-		private double score;
-		private string format;
+    /// <summary>
+    /// 数値型スコア
+    /// </summary>
+    public class NumberScore : IScore
+    {
+        private double score;
+        private string format;
 
 
-		public NumberScore (double score, string format = "")
-		{
-			this.score = score;			
-			this.format = format;
-		}
+        public NumberScore(double score, string format = "")
+        {
+            this.score = score;
+            this.format = format;
+        }
 
-		public string TextForDisplay {
-			get {
-				if (!string.IsNullOrEmpty (this.format)) {
-					return this.score.ToString (this.format);
-				} else {
-					return this.score.ToString ();
-				}
-			}
-		}
+        public ScoreType Type
+        {
+            get { return ScoreType.Number; }
+        }
 
-		public string TextForSave { 
-			get {
-				return this.score.ToString ();
-			}
-		}
+        public string TextForDisplay
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(format))
+                {
+                    return score.ToString(format);
+                }
+                else
+                {
+                    return score.ToString();
+                }
+            }
+        }
 
-		public double Value {
-			get {
-				return this.score;
-			}
-		}
-	}
+        public string TextForSave
+        {
+            get { return score.ToString(); }
+        }
+
+        public double Value
+        {
+            get { return score; }
+        }
+    }
 }

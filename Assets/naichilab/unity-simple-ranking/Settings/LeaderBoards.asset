@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2077db018983497c877db18d1720438, type: 3}
   m_Name: LeaderBoards
   m_EditorClassIdentifier: 
-  _leaderBoards:
+  leaderBoards:
   - {fileID: 11400000, guid: 449ceaf6330e5403da9a26302d942270, type: 2}

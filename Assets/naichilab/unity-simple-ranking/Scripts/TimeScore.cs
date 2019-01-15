@@ -5,38 +5,48 @@ using System;
 
 namespace naichilab
 {
-	public class TimeScore : IScore
-	{
-		private TimeSpan score;
-		private string format;
+    /// <summary>
+    /// 時間型スコア
+    /// </summary>
+    public class TimeScore : IScore
+    {
+        private TimeSpan time;
+        private string format;
 
-		public TimeScore (TimeSpan time, string format = "")
-		{
-			this.score = time;
-			this.format = format;
-		}
+        public TimeScore(TimeSpan time, string format = "")
+        {
+            this.time = time;
+            this.format = format;
+        }
 
-		public string TextForDisplay {
-			get {
-				if (!string.IsNullOrEmpty (this.format)) {
-					return new DateTime (0).Add (this.score).ToString (this.format);
-				} else {
-					return new DateTime (0).Add (this.score).ToString ();
-				}
-			}
-		}
+        public ScoreType Type
+        {
+            get { return ScoreType.Time; }
+        }
 
-		public string TextForSave { 
-			get {
-				return this.score.Ticks.ToString ();
-			}
-		}
+        public string TextForDisplay
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(format))
+                {
+                    return new DateTime(0).Add(time).ToString(format);
+                }
+                else
+                {
+                    return new DateTime(0).Add(time).ToString();
+                }
+            }
+        }
 
-		public double Value {
-			get {
-				return this.score.Ticks;
-			}
-		}
+        public string TextForSave
+        {
+            get { return time.Ticks.ToString(); }
+        }
 
-	}
+        public double Value
+        {
+            get { return time.Ticks; }
+        }
+    }
 }

@@ -1,16 +1,26 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace naichilab
 {
+    /// <summary>
+    /// リーダーボード一覧
+    /// </summary>
     [CreateAssetMenu]
     public class LeaderBoards : ScriptableObject
     {
-        [SerializeField] private LeaderBoardSetting[] _leaderBoards;
+        /// <summary>
+        /// リーダーボード一覧
+        /// </summary>
+        [SerializeField] private LeaderBoardSetting[] leaderBoards;
 
+        /// <summary>
+        /// リーダーボードを取得する
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public LeaderBoardSetting GetLeaderBoard(int index)
         {
-            return _leaderBoards[index];
+            return leaderBoards[index];
         }
     }
 }
