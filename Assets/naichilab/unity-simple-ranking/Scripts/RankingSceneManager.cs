@@ -9,13 +9,14 @@ namespace naichilab
 {
 	public class RankingSceneManager : MonoBehaviour
 	{
+		[SerializeField] Text captionLabel;
 		[SerializeField] Text scoreLabel;
 		[SerializeField] Text highScoreLabel;
 		[SerializeField] InputField nameInputField;
 		[SerializeField] Button sendScoreButton;
 		[SerializeField] Button closeButton;
 		[SerializeField] RectTransform scrollViewContent;
-		[SerializeField] GameObject rankingNodePrefab;
+ 		[SerializeField] GameObject rankingNodePrefab;
 		[SerializeField] GameObject readingNodePrefab;
 		[SerializeField] GameObject notFoundNodePrefab;
 
@@ -34,6 +35,11 @@ namespace naichilab
 		}
 
 		private const string RankingDataClassName = "RankingData";
+		private string _useRankingName;
+		private string UseRankingName {
+			get { return this._useRankingName; }
+			set { this._useRankingName = value == "" ? RankingDataClassName : value; }
+		}
 		private NCMBObject highScoreSpreadSheetObject;
 
 		/// <summary>
@@ -59,12 +65,14 @@ namespace naichilab
 		IEnumerator GetHighScoreAndRankingBoard ()
 		{
 			this.scoreLabel.text = RankingLoader.Instance.Score.TextForDisplay;
-				
+			his.UseRankingName = RankingLoader.Instance.info.className;
+			this.captionLabel.text = string.Format("{0}ハイスコアランキング", RankingLoader.Instance.info.displayName);
+
 			//ハイスコア取得
 			{
 				this.highScoreLabel.text = "取得中...";
 
-				var hiScoreCheck = new YieldableNcmbQuery<NCMBObject> (RankingDataClassName);
+				var hiScoreCheck = new YieldableNcmbQuery<NCMBObject> (this.UseRankingName);
 				hiScoreCheck.WhereEqualTo (OBJECT_ID, ObjectID);
 				yield return hiScoreCheck.FindAsync ();
 
@@ -76,7 +84,7 @@ namespace naichilab
 					this.highScoreLabel.text = s != null ? s.TextForDisplay : "エラー";
 
 					this.nameInputField.text = highScoreSpreadSheetObject ["name"].ToString ();
-				} else { 
+				} else {
 					//登録されていない
 					this.highScoreLabel.text = "-----";
 				}
@@ -122,8 +130,8 @@ namespace naichilab
 			this.highScoreSpreadSheetObject ["name"] = this.InputtedNameForSave;
 			this.highScoreSpreadSheetObject ["hiscore"] = RankingLoader.Instance.Score.Value;
 			NCMBException errorResult = null;
-			
-			yield return this.highScoreSpreadSheetObject.YieldableSaveAsync (error => errorResult = error);
+
+			yield return this.highScoreSpreadSheetObject.YieldableSaveAsync(error => errorResult = error);
 
 			if (errorResult != null) {  //NCMBのコンソールから直接削除した場合に、該当のobjectIdが無いので発生する（らしい）
 				highScoreSpreadSheetObject.ObjectId = null;
@@ -132,7 +140,7 @@ namespace naichilab
 
 			//ObjectIDを保存して次に備える
 			ObjectID = this.highScoreSpreadSheetObject.ObjectId;
-			
+
 			this.highScoreLabel.text = RankingLoader.Instance.Score.TextForDisplay;
 
 			yield return StartCoroutine (LoadRankingBoard ());
@@ -156,7 +164,7 @@ namespace naichilab
 			//2017.2.0b3の描画されないバグ暫定対応
 			MaskOffOn ();
 
-			var so = new YieldableNcmbQuery<NCMBObject> (RankingDataClassName);
+			var so = new YieldableNcmbQuery<NCMBObject> (this.UseRankingName);
 			so.Limit = 30;
 			if (RankingLoader.Instance.setting.Order == ScoreOrder.OrderByAscending) {
 				so.OrderByAscending ("hiscore");

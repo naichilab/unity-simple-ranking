@@ -15,6 +15,9 @@ namespace naichilab
 		[NonSerialized]
 		public IScore Score;
 
+		[SerializeField]
+		public RankingInfo info = new RankingInfo();
+
 		#region singleton
 
 		private static RankingLoader instance;
@@ -78,6 +81,38 @@ namespace naichilab
 			}
 
 			return null;
+		}
+	}
+
+	/// <summary>
+	/// ランキングの名前を表すクラス
+	/// </summary>
+	[Serializable]
+	public class RankingInfo
+	{
+		/// <summary>
+		/// サーバーとやり取りするときの名前
+		/// </summary>
+		public string className = "";
+
+		/// <summary>
+		/// 画面に表示する名前
+		/// </summary>
+		public string displayName = "";
+
+		public RankingInfo()
+		{ }
+
+		public RankingInfo(string className, string displayName)
+		{
+			this.className = className;
+			this.displayName = displayName;
+		}
+
+		public void Set(string className, string displayName)
+		{
+			this.className = className;
+			this.displayName = displayName;
 		}
 	}
 }
