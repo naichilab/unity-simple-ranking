@@ -86,29 +86,6 @@ namespace naichilab
         }
 
 
-        public IScore BuildScore(string scoreText)
-        {
-            try
-            {
-                switch (CurrentBoard.Type)
-                {
-                    case ScoreType.Number:
-                        double d = double.Parse(scoreText);
-                        return new NumberScore(d, CurrentBoard.CustomFormat);
-                        break;
-                    case ScoreType.Time:
-                        long ticks = long.Parse(scoreText);
-                        TimeSpan t = new TimeSpan(ticks);
-                        return new TimeScore(t, CurrentBoard.CustomFormat);
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning("不正なデータが渡されました。[" + scoreText + "]");
-            }
-
-            return null;
-        }
+    
     }
 }

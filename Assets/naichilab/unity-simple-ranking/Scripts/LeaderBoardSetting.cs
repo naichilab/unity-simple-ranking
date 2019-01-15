@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -36,5 +37,36 @@ namespace naichilab
         /// 表示カスタムフォーマット
         /// </summary>
         public string CustomFormat;
+
+
+        /// <summary>
+        /// テキストからIScoreを復元する
+        /// </summary>
+        /// <param name="scoreText"></param>
+        /// <returns></returns>
+        public IScore BuildScore(string scoreText)
+        {
+            try
+            {
+                switch (Type)
+                {
+                    case ScoreType.Number:
+                        double d = double.Parse(scoreText);
+                        return new NumberScore(d, CustomFormat);
+                        break;
+                    case ScoreType.Time:
+                        long ticks = long.Parse(scoreText);
+                        TimeSpan t = new TimeSpan(ticks);
+                        return new TimeScore(t, CustomFormat);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("不正なデータが渡されました。[" + scoreText + "]");
+            }
+
+            return null;
+        }
     }
 }

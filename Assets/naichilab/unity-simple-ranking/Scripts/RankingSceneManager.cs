@@ -7,210 +7,232 @@ using NCMB.Extensions;
 
 namespace naichilab
 {
-	public class RankingSceneManager : MonoBehaviour
-	{
-		[SerializeField] Text captionLabel;
-		[SerializeField] Text scoreLabel;
-		[SerializeField] Text highScoreLabel;
-		[SerializeField] InputField nameInputField;
-		[SerializeField] Button sendScoreButton;
-		[SerializeField] Button closeButton;
-		[SerializeField] RectTransform scrollViewContent;
- 		[SerializeField] GameObject rankingNodePrefab;
-		[SerializeField] GameObject readingNodePrefab;
-		[SerializeField] GameObject notFoundNodePrefab;
-
-		private const string OBJECT_ID = "objectId";
-		private string _objectid = null;
-
-		private string ObjectID {
-			get {
-				return _objectid ?? (_objectid = PlayerPrefs.GetString (OBJECT_ID, null));
-			}
-			set {
-				if (_objectid == value)
-					return;
-				PlayerPrefs.SetString (OBJECT_ID, _objectid = value);
-			}
-		}
-
-		private const string RankingDataClassName = "RankingData";
-		private string _useRankingName;
-		private string UseRankingName {
-			get { return this._useRankingName; }
-			set { this._useRankingName = value == "" ? RankingDataClassName : value; }
-		}
-		private NCMBObject highScoreSpreadSheetObject;
-
-		/// <summary>
-		/// 入力した名前
-		/// </summary>
-		/// <value>The name of the inputted.</value>
-		private string InputtedNameForSave {
-			get {
-				if (string.IsNullOrEmpty (this.nameInputField.text)) {
-					return "名無し";
-				}
-				return this.nameInputField.text;
-			}
-		}
-
-		void Start ()
-		{
-			this.sendScoreButton.interactable = false;
-
-			StartCoroutine (GetHighScoreAndRankingBoard ());
-		}
-
-		IEnumerator GetHighScoreAndRankingBoard ()
-		{
-			this.scoreLabel.text = RankingLoader.Instance.LastScore.TextForDisplay;
-			this.UseRankingName = RankingLoader.Instance.CurrentBoard.ClassName;
-			this.captionLabel.text = string.Format("{0}ランキング", RankingLoader.Instance.CurrentBoard.BoardName);
-
-			//ハイスコア取得
-			{
-				this.highScoreLabel.text = "取得中...";
-
-				var hiScoreCheck = new YieldableNcmbQuery<NCMBObject> (this.UseRankingName);
-				hiScoreCheck.WhereEqualTo (OBJECT_ID, ObjectID);
-				yield return hiScoreCheck.FindAsync ();
-
-				if (hiScoreCheck.Count > 0) {
-					//既にハイスコアは登録されている
-					highScoreSpreadSheetObject = hiScoreCheck.Result.First ();
-
-					var s = RankingLoader.Instance.BuildScore (highScoreSpreadSheetObject ["hiscore"].ToString ());
-					this.highScoreLabel.text = s != null ? s.TextForDisplay : "エラー";
-
-					this.nameInputField.text = highScoreSpreadSheetObject ["name"].ToString ();
-				} else {
-					//登録されていない
-					this.highScoreLabel.text = "-----";
-				}
-			}
-
-			//ランキング取得
-			yield return StartCoroutine (LoadRankingBoard ());
-
-			//スコア更新している場合、ボタン有効化
-			if (this.highScoreSpreadSheetObject == null) {
-				this.sendScoreButton.interactable = true;
-			} else {
-				var highScore = RankingLoader.Instance.BuildScore (this.highScoreSpreadSheetObject ["hiscore"].ToString ());
-				var score = RankingLoader.Instance.LastScore;
-
-				if (RankingLoader.Instance.CurrentBoard.Order == ScoreOrder.OrderByAscending) {
-					//数値が低い方が高スコア
-					this.sendScoreButton.interactable = score.Value < highScore.Value;
-				} else {
-					//数値が高い方が高スコア
-					this.sendScoreButton.interactable = highScore.Value < score.Value;
-				}
-			}
-		}
+    public class RankingSceneManager : MonoBehaviour
+    {
+        private const string OBJECT_ID = "objectId";
+        private const string COLUMN_SCORE = "score";
+        private const string COLUMN_NAME = "name";
 
 
-		public void SendScore ()
-		{
-			StartCoroutine (SendScoreEnumerator ());			
-		}
+        [SerializeField] Text captionLabel;
+        [SerializeField] Text scoreLabel;
+        [SerializeField] Text highScoreLabel;
+        [SerializeField] InputField nameInputField;
+        [SerializeField] Button sendScoreButton;
+        [SerializeField] Button closeButton;
+        [SerializeField] RectTransform scrollViewContent;
+        [SerializeField] GameObject rankingNodePrefab;
+        [SerializeField] GameObject readingNodePrefab;
+        [SerializeField] GameObject notFoundNodePrefab;
 
-		private IEnumerator SendScoreEnumerator ()
-		{
-			this.sendScoreButton.interactable = false;
-			this.highScoreLabel.text = "送信中...";
+        private string _objectid = null;
 
-			//ハイスコア送信
-			if (this.highScoreSpreadSheetObject == null) {
-				this.highScoreSpreadSheetObject = new NCMBObject (RankingDataClassName);
-				this.highScoreSpreadSheetObject.ObjectId = ObjectID;
-			}
+        private string ObjectID
+        {
+            get { return _objectid ?? (_objectid = PlayerPrefs.GetString(OBJECT_ID, null)); }
+            set
+            {
+                if (_objectid == value)
+                    return;
+                PlayerPrefs.SetString(OBJECT_ID, _objectid = value);
+            }
+        }
 
-			this.highScoreSpreadSheetObject ["name"] = this.InputtedNameForSave;
-			this.highScoreSpreadSheetObject ["hiscore"] = RankingLoader.Instance.LastScore.Value;
-			NCMBException errorResult = null;
+        private LeaderBoardSetting _board;
+        private IScore _lastScore;
 
-			yield return this.highScoreSpreadSheetObject.YieldableSaveAsync(error => errorResult = error);
+        private NCMBObject _ncmbRecord;
 
-			if (errorResult != null) {  //NCMBのコンソールから直接削除した場合に、該当のobjectIdが無いので発生する（らしい）
-				highScoreSpreadSheetObject.ObjectId = null;
-				yield return this.highScoreSpreadSheetObject.YieldableSaveAsync (error => errorResult = error);	//新規として送信
-			}
+        /// <summary>
+        /// 入力した名前
+        /// </summary>
+        /// <value>The name of the inputted.</value>
+        private string InputtedNameForSave
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(nameInputField.text))
+                {
+                    return "名無し";
+                }
 
-			//ObjectIDを保存して次に備える
-			ObjectID = this.highScoreSpreadSheetObject.ObjectId;
+                return nameInputField.text;
+            }
+        }
 
-			this.highScoreLabel.text = RankingLoader.Instance.LastScore.TextForDisplay;
+        void Start()
+        {
+            sendScoreButton.interactable = false;
+            _board = RankingLoader.Instance.CurrentBoard;
+            _lastScore = RankingLoader.Instance.LastScore;
 
-			yield return StartCoroutine (LoadRankingBoard ());
-		}
+            StartCoroutine(GetHighScoreAndRankingBoard());
+        }
+
+        IEnumerator GetHighScoreAndRankingBoard()
+        {
+            scoreLabel.text = _lastScore.TextForDisplay;
+            captionLabel.text = string.Format("{0}ランキング", _board.BoardName);
+
+            //ハイスコア取得
+            {
+                highScoreLabel.text = "取得中...";
+
+                var hiScoreCheck = new YieldableNcmbQuery<NCMBObject>(_board.ClassName);
+                hiScoreCheck.WhereEqualTo(OBJECT_ID, ObjectID);
+                yield return hiScoreCheck.FindAsync();
+
+                if (hiScoreCheck.Count > 0)
+                {
+                    //既にハイスコアは登録されている
+                    _ncmbRecord = hiScoreCheck.Result.First();
+
+                    var s = _board.BuildScore(_ncmbRecord[COLUMN_SCORE].ToString());
+                    highScoreLabel.text = s != null ? s.TextForDisplay : "エラー";
+
+                    nameInputField.text = _ncmbRecord[COLUMN_NAME].ToString();
+                }
+                else
+                {
+                    //登録されていない
+                    highScoreLabel.text = "-----";
+                }
+            }
+
+            //ランキング取得
+            yield return StartCoroutine(LoadRankingBoard());
+
+            //スコア更新している場合、ボタン有効化
+            if (_ncmbRecord == null)
+            {
+                sendScoreButton.interactable = true;
+            }
+            else
+            {
+                var highScore = _board.BuildScore(_ncmbRecord[COLUMN_SCORE].ToString());
+
+                if (_board.Order == ScoreOrder.OrderByAscending)
+                {
+                    //数値が低い方が高スコア
+                    sendScoreButton.interactable = _lastScore.Value < highScore.Value;
+                }
+                else
+                {
+                    //数値が高い方が高スコア
+                    sendScoreButton.interactable = highScore.Value < _lastScore.Value;
+                }
+            }
+        }
 
 
-		/// <summary>
-		/// ランキング取得＆表示
-		/// </summary>
-		/// <returns>The ranking board.</returns>
-		private IEnumerator LoadRankingBoard ()
-		{
-			int nodeCount = scrollViewContent.childCount;
-			Debug.Log (nodeCount);
-			for (int i = nodeCount - 1; i >= 0; i--) {
-				Destroy (scrollViewContent.GetChild (i).gameObject);
-			}
+        public void SendScore()
+        {
+            StartCoroutine(SendScoreEnumerator());
+        }
 
-			var msg = Instantiate (readingNodePrefab, scrollViewContent);
+        private IEnumerator SendScoreEnumerator()
+        {
+            sendScoreButton.interactable = false;
+            highScoreLabel.text = "送信中...";
 
-			//2017.2.0b3の描画されないバグ暫定対応
-			MaskOffOn ();
+            //ハイスコア送信
+            if (_ncmbRecord == null)
+            {
+                _ncmbRecord = new NCMBObject(_board.ClassName);
+                _ncmbRecord.ObjectId = ObjectID;
+            }
 
-			var so = new YieldableNcmbQuery<NCMBObject> (this.UseRankingName);
-			so.Limit = 30;
-			if (RankingLoader.Instance.CurrentBoard.Order == ScoreOrder.OrderByAscending) {
-				so.OrderByAscending ("hiscore");
-			} else {
-				so.OrderByDescending ("hiscore");
-			}
-			yield return so.FindAsync ();
+            _ncmbRecord[COLUMN_NAME] = InputtedNameForSave;
+            _ncmbRecord[COLUMN_SCORE] = _lastScore.Value;
+            NCMBException errorResult = null;
 
-			Debug.Log ("count : " + so.Count.ToString ());
-			Destroy (msg);
+            yield return _ncmbRecord.YieldableSaveAsync(error => errorResult = error);
 
-			if (so.Count > 0) {
+            if (errorResult != null)
+            {
+                //NCMBのコンソールから直接削除した場合に、該当のobjectIdが無いので発生する（らしい）
+                _ncmbRecord.ObjectId = null;
+                yield return _ncmbRecord.YieldableSaveAsync(error => errorResult = error); //新規として送信
+            }
 
-				int rank = 0;
-				foreach (var r in so.Result) {
+            //ObjectIDを保存して次に備える
+            ObjectID = _ncmbRecord.ObjectId;
 
-					var n = Instantiate (this.rankingNodePrefab, scrollViewContent);
-					var rankNode = n.GetComponent<RankingNode> ();
-					rankNode.NoText.text = (++rank).ToString ();
-					rankNode.NameText.text = r ["name"].ToString ();
+            highScoreLabel.text = _lastScore.TextForDisplay;
 
-					var s = RankingLoader.Instance.BuildScore (r ["hiscore"].ToString ());
-					rankNode.ScoreText.text = s != null ? s.TextForDisplay : "エラー";
+            yield return StartCoroutine(LoadRankingBoard());
+        }
 
-					Debug.Log (r ["hiscore"].ToString ());
-				}
 
-			} else {
-				Instantiate (this.notFoundNodePrefab, scrollViewContent);
-			}
-		}
+        /// <summary>
+        /// ランキング取得＆表示
+        /// </summary>
+        /// <returns>The ranking board.</returns>
+        private IEnumerator LoadRankingBoard()
+        {
+            int nodeCount = scrollViewContent.childCount;
+            Debug.Log(nodeCount);
+            for (int i = nodeCount - 1; i >= 0; i--)
+            {
+                Destroy(scrollViewContent.GetChild(i).gameObject);
+            }
 
-		public void OnCloseButtonClick ()
-		{
-			this.closeButton.interactable = false;
-			UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync ("Ranking");
-		}
+            var msg = Instantiate(readingNodePrefab, scrollViewContent);
 
-		private void MaskOffOn ()
-		{
-			//2017.2.0b3でなぜかScrollViewContentを追加しても描画されない場合がある。
-			//親maskをOFF/ONすると直るので無理やり・・・
-			var m = this.scrollViewContent.parent.GetComponent<Mask> ();
-			m.enabled = false;
-			m.enabled = true;
-		}
+            //2017.2.0b3の描画されないバグ暫定対応
+            MaskOffOn();
 
-	}
+            var so = new YieldableNcmbQuery<NCMBObject>(_board.ClassName);
+            so.Limit = 30;
+            if (_board.Order == ScoreOrder.OrderByAscending)
+            {
+                so.OrderByAscending(COLUMN_SCORE);
+            }
+            else
+            {
+                so.OrderByDescending(COLUMN_SCORE);
+            }
+
+            yield return so.FindAsync();
+
+            Debug.Log("count : " + so.Count.ToString());
+            Destroy(msg);
+
+            if (so.Count > 0)
+            {
+                int rank = 0;
+                foreach (var r in so.Result)
+                {
+                    var n = Instantiate(rankingNodePrefab, scrollViewContent);
+                    var rankNode = n.GetComponent<RankingNode>();
+                    rankNode.NoText.text = (++rank).ToString();
+                    rankNode.NameText.text = r[COLUMN_NAME].ToString();
+
+                    var s = _board.BuildScore(r[COLUMN_SCORE].ToString());
+                    rankNode.ScoreText.text = s != null ? s.TextForDisplay : "エラー";
+
+                    Debug.Log(r[COLUMN_SCORE].ToString());
+                }
+            }
+            else
+            {
+                Instantiate(notFoundNodePrefab, scrollViewContent);
+            }
+        }
+
+        public void OnCloseButtonClick()
+        {
+            closeButton.interactable = false;
+            UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync("Ranking");
+        }
+
+        private void MaskOffOn()
+        {
+            //2017.2.0b3でなぜかScrollViewContentを追加しても描画されない場合がある。
+            //親maskをOFF/ONすると直るので無理やり・・・
+            var m = scrollViewContent.parent.GetComponent<Mask>();
+            m.enabled = false;
+            m.enabled = true;
+        }
+    }
 }
