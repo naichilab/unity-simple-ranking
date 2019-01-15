@@ -65,7 +65,7 @@ namespace naichilab
 		IEnumerator GetHighScoreAndRankingBoard ()
 		{
 			this.scoreLabel.text = RankingLoader.Instance.Score.TextForDisplay;
-			his.UseRankingName = RankingLoader.Instance.info.className;
+			this.UseRankingName = RankingLoader.Instance.info.className;
 			this.captionLabel.text = string.Format("{0}ハイスコアランキング", RankingLoader.Instance.info.displayName);
 
 			//ハイスコア取得

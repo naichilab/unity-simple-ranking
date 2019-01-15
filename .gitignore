@@ -47,6 +47,9 @@ sysinfo.txt
 # Crashlytics generated file
 crashlytics-build.properties
 
+# Jetbrains IDE
+.idea*
+
 WebGLRelease/
 
 Assets/GSSA*
