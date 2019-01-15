@@ -3,20 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
+using UnityEngine.Serialization;
 
 namespace naichilab
 {
 	public class RankingLoader:MonoBehaviour
 	{
 		[SerializeField]
-		public ScoreTypeSetting setting;
+		public LeaderBoards leaderBoards;
 
 		[HideInInspector]
 		[NonSerialized]
+		public LeaderBoardSetting CurrentBoard;
+		
+		[HideInInspector]
+		[NonSerialized]
 		public IScore Score;
-
-		[SerializeField]
-		public RankingInfo info = new RankingInfo();
 
 		#region singleton
 
@@ -37,23 +39,25 @@ namespace naichilab
 
 		#endregion
 
-		public void SendScoreAndShowRanking (TimeSpan time)
+		public void SendScoreAndShowRanking (TimeSpan time,int boardId=0)
 		{
-			if (this.setting.Type != ScoreType.Time) {
+			CurrentBoard = leaderBoards.GetLeaderBoard(boardId);
+			if (CurrentBoard.Type != ScoreType.Time) {
 				throw new ArgumentException ("スコアの型が違います。");
 			}
 
-			this.Score = new TimeScore (time, this.setting.CustomFormat);
+			this.Score = new TimeScore (time, CurrentBoard.CustomFormat);
 			this.LoadRankingScene ();
 		}
 
-		public void SendScoreAndShowRanking (double score)
+		public void SendScoreAndShowRanking (double score,int boardId=0)
 		{
-			if (this.setting.Type != ScoreType.Number) {
+			CurrentBoard = leaderBoards.GetLeaderBoard(boardId);
+			if (CurrentBoard.Type != ScoreType.Number) {
 				throw new ArgumentException ("スコアの型が違います。");
 			}
 
-			this.Score = new NumberScore (score, this.setting.CustomFormat);
+			this.Score = new NumberScore (score, CurrentBoard.CustomFormat);
 			this.LoadRankingScene ();
 		}
 
@@ -65,15 +69,15 @@ namespace naichilab
 		public IScore BuildScore (string scoreText)
 		{
 			try {
-				switch (this.setting.Type) {
+				switch (CurrentBoard.Type) {
 				case ScoreType.Number:
 					double d = double.Parse (scoreText);
-					return new NumberScore (d, this.setting.CustomFormat);
+					return new NumberScore (d, CurrentBoard.CustomFormat);
 					break;
 				case ScoreType.Time:
 					long ticks = long.Parse (scoreText);
 					TimeSpan t = new TimeSpan (ticks);
-					return new TimeScore (t, this.setting.CustomFormat);
+					return new TimeScore (t, CurrentBoard.CustomFormat);
 					break;
 				}
 			} catch (Exception ex) {
@@ -81,38 +85,6 @@ namespace naichilab
 			}
 
 			return null;
-		}
-	}
-
-	/// <summary>
-	/// ランキングの名前を表すクラス
-	/// </summary>
-	[Serializable]
-	public class RankingInfo
-	{
-		/// <summary>
-		/// サーバーとやり取りするときの名前
-		/// </summary>
-		public string className = "";
-
-		/// <summary>
-		/// 画面に表示する名前
-		/// </summary>
-		public string displayName = "";
-
-		public RankingInfo()
-		{ }
-
-		public RankingInfo(string className, string displayName)
-		{
-			this.className = className;
-			this.displayName = displayName;
-		}
-
-		public void Set(string className, string displayName)
-		{
-			this.className = className;
-			this.displayName = displayName;
 		}
 	}
 }

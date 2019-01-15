@@ -65,8 +65,8 @@ namespace naichilab
 		IEnumerator GetHighScoreAndRankingBoard ()
 		{
 			this.scoreLabel.text = RankingLoader.Instance.Score.TextForDisplay;
-			this.UseRankingName = RankingLoader.Instance.info.className;
-			this.captionLabel.text = string.Format("{0}ハイスコアランキング", RankingLoader.Instance.info.displayName);
+			this.UseRankingName = RankingLoader.Instance.CurrentBoard.ClassName;
+			this.captionLabel.text = string.Format("{0}ランキング", RankingLoader.Instance.CurrentBoard.BoardName);
 
 			//ハイスコア取得
 			{
@@ -100,7 +100,7 @@ namespace naichilab
 				var highScore = RankingLoader.Instance.BuildScore (this.highScoreSpreadSheetObject ["hiscore"].ToString ());
 				var score = RankingLoader.Instance.Score;
 
-				if (RankingLoader.Instance.setting.Order == ScoreOrder.OrderByAscending) {
+				if (RankingLoader.Instance.CurrentBoard.Order == ScoreOrder.OrderByAscending) {
 					//数値が低い方が高スコア
 					this.sendScoreButton.interactable = score.Value < highScore.Value;
 				} else {
@@ -166,7 +166,7 @@ namespace naichilab
 
 			var so = new YieldableNcmbQuery<NCMBObject> (this.UseRankingName);
 			so.Limit = 30;
-			if (RankingLoader.Instance.setting.Order == ScoreOrder.OrderByAscending) {
+			if (RankingLoader.Instance.CurrentBoard.Order == ScoreOrder.OrderByAscending) {
 				so.OrderByAscending ("hiscore");
 			} else {
 				so.OrderByDescending ("hiscore");
