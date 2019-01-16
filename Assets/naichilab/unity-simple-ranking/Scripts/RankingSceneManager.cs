@@ -38,7 +38,7 @@ namespace naichilab
             }
         }
 
-        private LeaderBoardSetting _board;
+        private RankingInfo _board;
         private IScore _lastScore;
 
         private NCMBObject _ncmbRecord;
@@ -63,7 +63,7 @@ namespace naichilab
         void Start()
         {
             sendScoreButton.interactable = false;
-            _board = RankingLoader.Instance.CurrentBoard;
+            _board = RankingLoader.Instance.CurrentRanking;
             _lastScore = RankingLoader.Instance.LastScore;
 
             StartCoroutine(GetHighScoreAndRankingBoard());

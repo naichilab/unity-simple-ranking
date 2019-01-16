@@ -9,8 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b2077db018983497c877db18d1720438, type: 3}
-  m_Name: LeaderBoards
+  m_Script: {fileID: 11500000, guid: a70574be0ea4044ac8d85c166124b3b1, type: 3}
+  m_Name: SampleAscRankingInfo
   m_EditorClassIdentifier: 
-  leaderBoards:
-  - {fileID: 11400000, guid: 449ceaf6330e5403da9a26302d942270, type: 2}
+  BoardName: "\u30CF\u30A4\u30B9\u30B3\u30A2\uFF08\u6607\u9806\uFF09"
+  ClassName: HiScoreAsc
+  Type: 0
+  Order: 0
+  CustomFormat: 

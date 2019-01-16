@@ -9,7 +9,7 @@ namespace naichilab
     /// １つのリーダーボード情報
     /// </summary>
     [CreateAssetMenu]
-    public class LeaderBoardSetting : ScriptableObject
+    public class RankingInfo : ScriptableObject
     {
         /// <summary>
         /// リーダーボード名

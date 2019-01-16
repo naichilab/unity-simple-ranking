@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
+using System.Linq;
+using UnityEngine.Serialization;
 
 namespace naichilab
 {
@@ -12,12 +14,12 @@ namespace naichilab
         /// <summary>
         /// リーダーボード一覧
         /// </summary>
-        [SerializeField] public LeaderBoards leaderBoards;
+        [SerializeField] public RankingBoards RankingBoards;
 
         /// <summary>
         /// 表示対象のボード
         /// </summary>
-        [NonSerialized] public LeaderBoardSetting CurrentBoard;
+        [NonSerialized] public RankingInfo CurrentRanking;
 
         /// <summary>
         /// 直前のスコア
@@ -48,6 +50,12 @@ namespace naichilab
 
         #endregion
 
+        void Start()
+        {
+            //Class名重複をチェック
+            RankingBoards.CheckDuplicateClassName();
+        }
+
 
         /// <summary>
         /// 時間型スコアの送信とランキング表示を行います
@@ -56,7 +64,7 @@ namespace naichilab
         /// <param name="boardId"></param>
         public void SendScoreAndShowRanking(TimeSpan time, int boardId = 0)
         {
-            var board = leaderBoards.GetLeaderBoard(boardId);
+            var board = RankingBoards.GetRankingInfo(boardId);
             var sc = new TimeScore(time, board.CustomFormat);
             SendScoreAndShowRanking(sc, board);
         }
@@ -68,24 +76,21 @@ namespace naichilab
         /// <param name="boardId"></param>
         public void SendScoreAndShowRanking(double score, int boardId = 0)
         {
-            var board = leaderBoards.GetLeaderBoard(boardId);
+            var board = RankingBoards.GetRankingInfo(boardId);
             var sc = new NumberScore(score, board.CustomFormat);
             SendScoreAndShowRanking(sc, board);
         }
 
-        private void SendScoreAndShowRanking(IScore score, LeaderBoardSetting board)
+        private void SendScoreAndShowRanking(IScore score, RankingInfo board)
         {
             if (board.Type != score.Type)
             {
                 throw new ArgumentException("スコアの型が違います。");
             }
 
-            CurrentBoard = board;
+            CurrentRanking = board;
             LastScore = score;
             SceneManager.LoadScene("Ranking", LoadSceneMode.Additive);
         }
-
-
-    
     }
 }

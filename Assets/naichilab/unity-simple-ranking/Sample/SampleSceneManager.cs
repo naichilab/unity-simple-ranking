@@ -6,44 +6,35 @@ using UnityEngine.UI;
 
 public class SampleSceneManager : MonoBehaviour
 {
+    public Text scoreText;
+    [NonSerialized] int score = 0;
 
-	[SerializeField]
-	Button minusButton;
+    public void OnPlusButtonPressed()
+    {
+        score++;
+        scoreText.text = score.ToString();
+    }
 
-	[SerializeField]
-	Button plusButton;
+    public void OnMinusButtonPressed()
+    {
+        score--;
+        scoreText.text = score.ToString();
+    }
 
-	[SerializeField]
-	Text scoreText;
+    public void OnResultButton0Pressed()
+    {
+        naichilab.RankingLoader.Instance.SendScoreAndShowRanking(score, 0);
+    }
 
-	[SerializeField]
-	Button resultButton;
-
-
-	int score = 0;
-
-
-
-	public void OnPlusButtonPresset ()
-	{
-		this.score++;
-		this.scoreText.text = this.score.ToString ();
-	}
-
-	public void OnMinusButtonPresset ()
-	{
-		this.score--;
-		this.scoreText.text = this.score.ToString ();
-	}
-
-	public void OnResultButtonPresset ()
-	{
-	    naichilab.RankingLoader.Instance.SendScoreAndShowRanking(this.score);
-	}
+    public void OnResultButton1Pressed()
+    {
+        naichilab.RankingLoader.Instance.SendScoreAndShowRanking(score, 1);
+    }
 
     public void LocalSaveReset()
     {
+        score = 0;
+        scoreText.text = score.ToString();
         PlayerPrefs.DeleteAll();
     }
-
 }
