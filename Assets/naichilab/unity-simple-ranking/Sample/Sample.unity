@@ -1409,7 +1409,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ee1ffff0e8554589a962f4749a0222f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Config: {fileID: 11400000, guid: 1eb1946d621ce4a7498b323f155187b6, type: 2}
+  RankingBoards: {fileID: 11400000, guid: 1eb1946d621ce4a7498b323f155187b6, type: 2}
 --- !u!4 &1968918638
 Transform:
   m_ObjectHideFlags: 0

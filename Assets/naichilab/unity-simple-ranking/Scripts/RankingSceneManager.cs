@@ -24,6 +24,7 @@ namespace naichilab
         [SerializeField] GameObject rankingNodePrefab;
         [SerializeField] GameObject readingNodePrefab;
         [SerializeField] GameObject notFoundNodePrefab;
+        [SerializeField] GameObject unavailableNodePrefab;
 
         private string _objectid = null;
 
@@ -198,7 +199,11 @@ namespace naichilab
             Debug.Log("count : " + so.Count.ToString());
             Destroy(msg);
 
-            if (so.Count > 0)
+            if (so.Error != null)
+            {
+                Instantiate(unavailableNodePrefab, scrollViewContent);
+            }
+            else if (so.Count > 0)
             {
                 int rank = 0;
                 foreach (var r in so.Result)
