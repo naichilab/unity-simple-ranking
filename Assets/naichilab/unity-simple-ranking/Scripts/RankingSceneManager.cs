@@ -30,13 +30,18 @@ namespace naichilab
 
         private string ObjectID
         {
-            get { return _objectid ?? (_objectid = PlayerPrefs.GetString(OBJECT_ID, null)); }
+            get { return _objectid ?? (_objectid = PlayerPrefs.GetString(BoardIdPlayerPrefsKey, null)); }
             set
             {
                 if (_objectid == value)
                     return;
-                PlayerPrefs.SetString(OBJECT_ID, _objectid = value);
+                PlayerPrefs.SetString(BoardIdPlayerPrefsKey, _objectid = value);
             }
+        }
+
+        private string BoardIdPlayerPrefsKey
+        {
+            get { return string.Format("{0}_{1}_{2}", "board", _board.ClassName, OBJECT_ID); }
         }
 
         private RankingInfo _board;
@@ -66,6 +71,8 @@ namespace naichilab
             sendScoreButton.interactable = false;
             _board = RankingLoader.Instance.CurrentRanking;
             _lastScore = RankingLoader.Instance.LastScore;
+
+            Debug.Log(BoardIdPlayerPrefsKey + "=" + PlayerPrefs.GetString(BoardIdPlayerPrefsKey, null));
 
             StartCoroutine(GetHighScoreAndRankingBoard());
         }
@@ -122,6 +129,9 @@ namespace naichilab
                     //数値が高い方が高スコア
                     sendScoreButton.interactable = highScore.Value < _lastScore.Value;
                 }
+
+                Debug.Log(string.Format("登録済みスコア:{0} 今回スコア:{1} ハイスコア更新:{2}", highScore.Value, _lastScore.Value,
+                    sendScoreButton.interactable));
             }
         }
 
@@ -172,7 +182,6 @@ namespace naichilab
         private IEnumerator LoadRankingBoard()
         {
             int nodeCount = scrollViewContent.childCount;
-            Debug.Log(nodeCount);
             for (int i = nodeCount - 1; i >= 0; i--)
             {
                 Destroy(scrollViewContent.GetChild(i).gameObject);
@@ -196,7 +205,7 @@ namespace naichilab
 
             yield return so.FindAsync();
 
-            Debug.Log("count : " + so.Count.ToString());
+            Debug.Log("データ取得 : " + so.Count.ToString() + "件");
             Destroy(msg);
 
             if (so.Error != null)
@@ -216,7 +225,7 @@ namespace naichilab
                     var s = _board.BuildScore(r[COLUMN_SCORE].ToString());
                     rankNode.ScoreText.text = s != null ? s.TextForDisplay : "エラー";
 
-                    Debug.Log(r[COLUMN_SCORE].ToString());
+//                    Debug.Log(r[COLUMN_SCORE].ToString());
                 }
             }
             else
