@@ -11,8 +11,7 @@ namespace naichilab
     /// </summary>
     public class RankingRecord
     {
-        public string ObjectID { get; private set; }
-        public string Name     { get; private set; }
+        public string Name     { get; set; }
         public IScore Score    { get; private set; }
         public string Hash     { get; private set; }
 
@@ -20,20 +19,17 @@ namespace naichilab
         /// コンストラクタ
         /// ・DBから復元する場合はhashの引数があるものを使用します
         /// </summary>
-        /// <param name="objectId"></param>
         /// <param name="name"></param>
         /// <param name="score"></param>
         /// <param name="hash"></param>
-        public RankingRecord(string objectId, string name, IScore score)
+        public RankingRecord(string name, IScore score)
         {
-            ObjectID = objectId;
             Name     = name;
             Score    = score;
             Hash     = CalcHash();
         }
-        public RankingRecord(string objectId, string name, IScore score, string hash) 
+        public RankingRecord(string name, IScore score, string hash) 
         {
-            ObjectID = objectId;
             Name     = name;
             Score    = score;
             Hash     = hash;
@@ -46,7 +42,7 @@ namespace naichilab
         /// <returns></returns>
         string CalcHash()
         {
-            return (ObjectID + Name + Score.TextForSave + NCMB.NCMBSettings.ClientKey).ToHMACSHA256();
+            return (Name + Score.TextForSave + NCMB.NCMBSettings.ClientKey).ToHMACSHA256();
         }
 
         /// <summary>
@@ -59,12 +55,10 @@ namespace naichilab
         }
 
         /// <summary>
-        /// 名前変更
-        /// ・ハッシュ値が再計算されることに注意してください
+        /// ハッシュ再計算
         /// </summary>
-        public void ChangeName(string name)
+        public void RefreshHash()
         {
-            Name = name;
             Hash = CalcHash();
         }
     }

@@ -49,6 +49,11 @@ namespace naichilab
                 PlayerPrefs.SetString(BoardIdPlayerPrefsKey, _objectid = value);
             }
         }
+        private void CrearObjectID()
+        {
+            PlayerPrefs.SetString(BoardIdPlayerPrefsKey, null);
+        }
+
 
         private string BoardIdPlayerPrefsKey
         {
@@ -86,7 +91,7 @@ namespace naichilab
         {
             sendScoreButton.interactable = false;
             _board = RankingLoader.Instance.CurrentRanking;
-            _lastScoreRecord = new RankingRecord(ObjectID, "default", RankingLoader.Instance.LastScore); // 後で書き換えるので名前は適当に登録しています
+            _lastScoreRecord = new RankingRecord("default", RankingLoader.Instance.LastScore); // 後で書き換えるので名前は適当に登録しています
 
             Debug.Log(BoardIdPlayerPrefsKey + "=" + PlayerPrefs.GetString(BoardIdPlayerPrefsKey, null));
 
@@ -114,8 +119,7 @@ namespace naichilab
 
                     var s = _board.BuildScore(_ncmbRecord[COLUMN_SCORE].ToString());
                     if (s != null) {
-                        hiScoreRecord = new RankingRecord(_ncmbRecord.ObjectId,
-                                                          _ncmbRecord[COLUMN_NAME].ToString(),
+                        hiScoreRecord = new RankingRecord(_ncmbRecord[COLUMN_NAME].ToString(),
                                                           s,
                                                           _ncmbRecord.ContainsKey(COLUMN_HASH) ? _ncmbRecord[COLUMN_HASH].ToString() : "");
                         if (EnabledVerifyHash && !hiScoreRecord.VerifyHash()) {
@@ -184,7 +188,8 @@ namespace naichilab
 
             _ncmbRecord[COLUMN_NAME] = InputtedNameForSave;
             _ncmbRecord[COLUMN_SCORE] = _lastScoreRecord.Score.Value;
-            _lastScoreRecord.ChangeName(InputtedNameForSave); // 名前変更
+            _lastScoreRecord.Name = InputtedNameForSave; // 名前変更
+            _lastScoreRecord.RefreshHash(); // ハッシュ再計算
             _ncmbRecord[COLUMN_HASH] = _lastScoreRecord.Hash;
             NCMBException errorResult = null;
 
@@ -194,6 +199,7 @@ namespace naichilab
             {
                 //NCMBのコンソールから直接削除した場合に、該当のobjectIdが無いので発生する（らしい）
                 _ncmbRecord.ObjectId = null;
+                CrearObjectID();
                 yield return _ncmbRecord.YieldableSaveAsync(error => errorResult = error); //新規として送信
             }
 
@@ -253,8 +259,8 @@ namespace naichilab
                     IScore highScore = _board.BuildScore(r[COLUMN_SCORE].ToString());
                     if (highScore == null) continue;
 
-                    RankingRecord highScoreRecord = new RankingRecord(r.ObjectId,
-                                                                      r[COLUMN_NAME].ToString(),
+                    // ハッシュ検証
+                    RankingRecord highScoreRecord = new RankingRecord(r[COLUMN_NAME].ToString(),
                                                                       highScore,
                                                                       r.ContainsKey(COLUMN_HASH) ? r[COLUMN_HASH].ToString() : "");
                     if (EnabledVerifyHash && !highScoreRecord.VerifyHash()) continue;
