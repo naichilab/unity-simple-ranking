@@ -14,7 +14,7 @@ namespace naichilab
 		/// <summary>
 		/// 降順(数値が大きい方がハイスコア)
 		/// </summary>
-		[Tooltip ("昇順(数値が小さい方がハイスコア)")]
+		[Tooltip ("降順(数値が大きい方がハイスコア)")]
 		OrderByDescending
 	}
 }
