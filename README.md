@@ -14,7 +14,7 @@ https://unityroom.com/games/unityroom-ranking-sample/webgl
 
 バックエンドとしてNCMBを利用しています。
 
-http://mb.cloud.nifty.com/doc/current/introduction/quickstart_unity.html
+https://mbaas.nifcloud.com/doc/current/introduction/quickstart_unity.html
 
 * バージョンの差異等によりうまく動かなくなる可能性があります。
 * 不具合を見つけた場合は[@naichilab](https://twitter.com/naichilab)までお知らせください。
@@ -26,7 +26,7 @@ http://blog.naichilab.com/entry/webgl-simple-ranking
 
 # 謝辞
 
-* [NCMB](http://mb.cloud.nifty.com/)さん
+* [NCMB](https://mbaas.nifcloud.com/)さん
 * [@divideby_zero](https://twitter.com/divideby_zero)さん
 
 大変助かりました。ありがとうございます。
