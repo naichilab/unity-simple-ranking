@@ -17,6 +17,12 @@ namespace naichilab
         [SerializeField] public RankingBoards RankingBoards;
 
         /// <summary>
+        /// ハッシュ値による検証有効
+        /// ・検証無効であってもハッシュ値の計算・登録は行われます
+        /// </summary>
+        [SerializeField] public bool EnabledVerifyHash;
+
+        /// <summary>
         /// 表示対象のボード
         /// </summary>
         [NonSerialized] public RankingInfo CurrentRanking;
