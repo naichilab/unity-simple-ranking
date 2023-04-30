@@ -198,10 +198,13 @@ namespace naichilab
                 Destroy(scrollViewContent.GetChild(i).gameObject);
             }
 
-            nodeCount = rivalScrollViewContent.childCount;
-            for (int i = nodeCount - 1; i >= 0; i--)
+            if (rivalScrollViewContent)
             {
-                Destroy(rivalScrollViewContent.GetChild(i).gameObject);
+                nodeCount = rivalScrollViewContent.childCount;
+                for (int i = nodeCount - 1; i >= 0; i--)
+                {
+                    Destroy(rivalScrollViewContent.GetChild(i).gameObject);
+                }
             }
 
             var msg = Instantiate(readingNodePrefab, scrollViewContent);
