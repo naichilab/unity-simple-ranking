@@ -1,9 +1,11 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
 using NCMB;
 using NCMB.Extensions;
+using UnityEngine.Serialization;
 
 namespace naichilab
 {
@@ -17,6 +19,7 @@ namespace naichilab
         [SerializeField] Text captionLabel;
         [SerializeField] Text scoreLabel;
         [SerializeField] Text highScoreLabel;
+        [SerializeField] Text currentRankLabel;
         [SerializeField] InputField nameInputField;
         [SerializeField] Button sendScoreButton;
         [SerializeField] Button closeButton;
@@ -25,8 +28,11 @@ namespace naichilab
         [SerializeField] GameObject readingNodePrefab;
         [SerializeField] GameObject notFoundNodePrefab;
         [SerializeField] GameObject unavailableNodePrefab;
+        [SerializeField] RectTransform rivalScrollViewContent;
 
         private string _objectid = null;
+        
+        private int _currentRank = 0;
 
         private string ObjectID
         {
@@ -85,6 +91,7 @@ namespace naichilab
             //ハイスコア取得
             {
                 highScoreLabel.text = "取得中...";
+                if(currentRankLabel) currentRankLabel.text = "取得中...";
 
                 var hiScoreCheck = new YieldableNcmbQuery<NCMBObject>(_board.ClassName);
                 hiScoreCheck.WhereEqualTo(OBJECT_ID, ObjectID);
@@ -104,6 +111,10 @@ namespace naichilab
                 {
                     //登録されていない
                     highScoreLabel.text = "-----";
+                    if (currentRankLabel)
+                    {
+                        currentRankLabel.text = "-----";
+                    }
                 }
             }
 
@@ -187,6 +198,15 @@ namespace naichilab
                 Destroy(scrollViewContent.GetChild(i).gameObject);
             }
 
+            if (rivalScrollViewContent)
+            {
+                nodeCount = rivalScrollViewContent.childCount;
+                for (int i = nodeCount - 1; i >= 0; i--)
+                {
+                    Destroy(rivalScrollViewContent.GetChild(i).gameObject);
+                }
+            }
+
             var msg = Instantiate(readingNodePrefab, scrollViewContent);
 
             //2017.2.0b3の描画されないバグ暫定対応
@@ -206,6 +226,11 @@ namespace naichilab
             yield return so.FindAsync();
 
             Debug.Log("データ取得 : " + so.Count.ToString() + "件");
+            // ランキングのラベルが登録されていたら自分のランキングを取得する
+            if (currentRankLabel)
+            {
+                yield return FetchMyRank();
+            }
             Destroy(msg);
 
             if (so.Error != null)
@@ -221,6 +246,11 @@ namespace naichilab
                     var rankNode = n.GetComponent<RankingNode>();
                     rankNode.NoText.text = (++rank).ToString();
                     rankNode.NameText.text = r[COLUMN_NAME].ToString();
+                    // 自分と同じObjectIDだったら色を赤にする
+                    if (r.ObjectId == ObjectID)
+                    {
+                        SetNodeColorText(rankNode);
+                    }
 
                     var s = _board.BuildScore(r[COLUMN_SCORE].ToString());
                     rankNode.ScoreText.text = s != null ? s.TextForDisplay : "エラー";
@@ -234,12 +264,100 @@ namespace naichilab
             }
         }
 
+        /// <summary>
+        /// 今回のスコアでのランキングの情報を取得する
+        /// </summary>
+        private IEnumerator FetchMyRank()
+        {
+            var hiScoreCheck = new YieldableNcmbQuery<NCMBObject>(_board.ClassName);
+            if (_board.Order == ScoreOrder.OrderByAscending)
+            {
+                //数値が低い方が高スコア
+                hiScoreCheck.WhereLessThan(COLUMN_SCORE, _lastScore.Value);
+            }
+            else
+            {
+                //数値が高い方が高スコア
+                hiScoreCheck.WhereGreaterThan(COLUMN_SCORE, _lastScore.Value);
+            }
+
+            int countResult = -1;
+            NCMBException countError = null;
+
+            hiScoreCheck.CountAsync((count, error) =>
+            {
+                countResult = count + 1;
+                countError = error;
+            });
+            yield return new WaitWhile(() => countResult == -1 && countError == null);
+            currentRankLabel.text =  countResult.ToString();
+            if (rivalScrollViewContent)
+            {
+                FetchNearerScore(countResult);
+            }
+        }
+
+        /// <summary>
+        /// ライバルのスコアを獲得する
+        /// </summary>
+        /// <param name="myRank"></param>
+        private void FetchNearerScore(int myRank)
+        {
+            var nearerCheck = new YieldableNcmbQuery<NCMBObject>(_board.ClassName);
+            // ライバルのランキング取得
+            int numSkip = myRank - 2;
+            if(numSkip < 0) numSkip = 0;
+            
+            nearerCheck.Skip  = numSkip;
+            nearerCheck.Limit = 5;
+            if (_board.Order == ScoreOrder.OrderByAscending)
+            {
+                nearerCheck.OrderByAscending(COLUMN_SCORE);
+            }
+            else
+            {
+                nearerCheck.OrderByDescending(COLUMN_SCORE);
+            }
+            nearerCheck.FindAsync ((List<NCMBObject> objList ,NCMBException e) => {
+
+                if (e != null) {
+                    //検索失敗時の処理
+                } else {
+                    //検索成功時の処理
+                    // 取得したレコードをHighScoreクラスとして保存
+                    int rank = numSkip;
+                    foreach (var r in objList)
+                    {
+                        var n = Instantiate(rankingNodePrefab, rivalScrollViewContent);
+                        var rankNode = n.GetComponent<RankingNode>();
+                        rankNode.NoText.text = (++rank).ToString();
+                        rankNode.NameText.text = r[COLUMN_NAME].ToString();
+                        // 自分と同じObjectIDだったら色を赤にする
+                        if (r.ObjectId == ObjectID)
+                        {
+                            SetNodeColorText(rankNode);
+                        }
+
+                        var s = _board.BuildScore(r[COLUMN_SCORE].ToString());
+                        rankNode.ScoreText.text = s != null ? s.TextForDisplay : "エラー";
+                    }
+                }
+            });
+        }
+        
+        private void SetNodeColorText(RankingNode node)
+        {
+            node.NoText.color = Color.red;
+            node.NameText.color = Color.red;
+            node.ScoreText.color = Color.red;
+        }
+
         public void OnCloseButtonClick()
         {
             closeButton.interactable = false;
             UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync("Ranking");
         }
-
+        
         private void MaskOffOn()
         {
             //2017.2.0b3でなぜかScrollViewContentを追加しても描画されない場合がある。
