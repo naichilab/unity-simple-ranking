@@ -19,6 +19,11 @@ https://mbaas.nifcloud.com/doc/current/introduction/quickstart_unity.html
 * バージョンの差異等によりうまく動かなくなる可能性があります。
 * 不具合を見つけた場合は[@naichilab](https://twitter.com/naichilab)までお知らせください。
 
+####################################  
+NCMBは2024年3月31日にサービス終了することが決定しています。  
+https://mbaas.nifcloud.com/info/2023/11/post-171.html  
+####################################  
+
 # 使用方法
 
 下記ブログを参照ください。
